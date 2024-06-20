@@ -1,0 +1,29 @@
+models:
+  - name: Product
+    fields:
+      - name: id
+        type: int32
+        primary_key: true
+        auto_increment: true
+      - name: name
+        type: string
+      - name: amount
+        type: int32
+      - name: description
+        type: string
+  - name: Sensor
+    fields:
+      - name: id
+        type: int32
+        primary_key: true
+        auto_increment: true
+      - name: temperature
+        type: int32
+      - name: humidity
+        type: int32
+      - name: distance
+        type: int32
+      - name: light
+        type: int32
+      - name: sound
+        type: int32
