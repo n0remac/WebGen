@@ -45,10 +45,7 @@ func LoadSchema(path string) (*Schema, error) {
     return &schema, nil
 }
 
-func GenerateAll(schemaPath string) error {
-    appPath := "../app"
-    projectName := "CodeGen"
-
+func GenerateAll(schemaPath string, appPath string, projectName string) error {
     schema, err := LoadSchema(schemaPath)
     if err != nil {
         return fmt.Errorf("loading schema: %w", err)
