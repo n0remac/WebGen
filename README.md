@@ -15,13 +15,13 @@
 1. **Set up project**  
     - Make sure you choose a new name for your project
       ```bash
-      git clone https://github.com/n0remac/Go-gRPC-React-starter.git <new-project-name>
+      git clone https://github.com/n0remac/CodeGen.git <new-project-name>
       ```
     - Change directory
       ```
       cd <new-project-name>
       ```
-    - Use IDE to replace all instances of Go-gRPC-React-starter with `<new-project-name>`. In the package.json the new project name should be entirely lowercase.
+    - Use IDE to replace all instances of CodeGen with `<new-project-name>`. In the package.json the new project name should be entirely lowercase.
 2. **Set Up the Frontend (React)**
    - Ensure you are in the project's root directory.
    - Install dependencies:
