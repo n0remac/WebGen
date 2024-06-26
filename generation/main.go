@@ -15,11 +15,19 @@ func main() {
 	appPath := "../MyApp"
     projectName := "MyApp"
 
+	githubOwner := "n0remac"
+
+	// Create the Terraform variables
+	vars := generator.TerraformVars{
+		GithubOwner: githubOwner,
+		RepoName:    projectName,
+	}
+
 	copyDirectory("../app", appPath)
 	replaceWordInDirectory(appPath, "CodeGen", projectName)
 	replaceWordInDirectory(appPath, "codegen", strings.ToLower(projectName))
 	
-	err := generator.GenerateAll("schema.yaml", appPath, projectName)
+	err := generator.GenerateAll("schema.yaml", appPath, projectName, vars)
 	if err != nil {
 		log.Fatalf("Generation failed: %v", err)
 	}
