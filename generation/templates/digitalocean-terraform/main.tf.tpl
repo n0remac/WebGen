@@ -33,3 +33,15 @@ resource "digitalocean_droplet" "web" {
               apt-get install -y nginx
               EOF
 }
+
+resource "digitalocean_project_resources" "web_project" {
+  project = digitalocean_project.project.id
+
+  resources = [
+    digitalocean_droplet.web.urn
+  ]
+}
+
+output "droplet_ip" {
+  value = digitalocean_droplet.web.ipv4_address
+}

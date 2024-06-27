@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"generation/internal/generator"
 	"log"
 
@@ -14,8 +15,8 @@ import (
 var projectName string = "MyApp"
 
 func main() {
-	// generateApp()
-	// setupGit()
+	generateApp()
+	setupGit()
 	setupDigitalOcean()
 }
 
@@ -91,6 +92,13 @@ func setupDigitalOcean() {
 
 	// Run Terraform for DigitalOcean
 	runTerraform(directory)
+
+	// Get the droplet IP address
+	dropletIP, err := getTerraformOutput(directory, "droplet_ip")
+	if err != nil {
+		log.Fatalf("Error getting droplet IP: %v", err)
+	}
+	fmt.Printf("Droplet IP: %s\n", dropletIP)
 }
 
 func runTerraform(appPath string) {
@@ -102,6 +110,19 @@ func runTerraform(appPath string) {
 	for _, cmd := range cmds {
 		runCommand(appPath, cmd[0], cmd[1:]...)
 	}
+}
+
+func getTerraformOutput(appPath, outputName string) (string, error) {
+	cmd := exec.Command("terraform", "output", "-raw", outputName)
+	cmd.Dir = appPath
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("command terraform output -raw %s failed with %w", outputName, err)
+	}
+	return strings.TrimSpace(out.String()), nil
 }
 
 func runGitCommands(owner, repo string) {
