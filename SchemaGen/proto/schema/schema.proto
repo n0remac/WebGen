@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package schema;
+
+// The Schema service definition.
+service SchemaService {
+  rpc CreateSchema(CreateSchemaRequest) returns (CreateSchemaResponse);
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+  rpc UpdateSchema(UpdateSchemaRequest) returns (UpdateSchemaResponse);
+  rpc DeleteSchema(DeleteSchemaRequest) returns (DeleteSchemaResponse);
+}
+
+message CreateSchemaRequest {
+  Schema schema = 1;
+}
+
+message CreateSchemaResponse {
+  Schema schema = 1;
+}
+
+message GetSchemaRequest {
+  int32 id = 1;
+}
+
+message GetSchemaResponse {
+  Schema schema = 1;
+}
+
+message UpdateSchemaRequest {
+  Schema schema = 1;
+}
+
+message UpdateSchemaResponse {
+  Schema schema = 1;
+}
+
+message DeleteSchemaRequest {
+  int32 id = 1;
+}
+
+message DeleteSchemaResponse {
+  bool success = 1;
+}
+
+// The Schema message represents a schema in the system.
+message Schema {
+  int32 id = 1;
+  string name = 2;
+  string content = 3;
+}

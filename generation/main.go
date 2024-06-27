@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var projectName string = "MyApp" 
+var projectName string = "SchemaGen" 
 
 func main() {
 	generateApp()
@@ -19,7 +19,7 @@ func main() {
 }
 
 func generateApp() {
-	appPath := "../MyApp"
+	appPath := "../" + projectName
 
 	copyDirectory("../app", appPath)
 	replaceWordInDirectory(appPath, "CodeGen", projectName)
