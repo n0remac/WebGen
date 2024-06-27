@@ -45,7 +45,7 @@ func LoadSchema(path string) (*Schema, error) {
     return &schema, nil
 }
 
-func GenerateAll(schemaPath string, appPath string, projectName string, vars TerraformVars) error {
+func GenerateAll(schemaPath string, appPath string, projectName string) error {
     schema, err := LoadSchema(schemaPath)
     if err != nil {
         return fmt.Errorf("loading schema: %w", err)
@@ -71,9 +71,9 @@ func GenerateAll(schemaPath string, appPath string, projectName string, vars Ter
         return fmt.Errorf("generating react: %w", err)
     }
 
-    if err := GenerateTerraform(vars, appPath); err != nil {
-        return fmt.Errorf("generating terraform: %w", err)
-    }
+    // if err := GenerateTerraform(vars, ".."); err != nil {
+    //     return fmt.Errorf("generating terraform: %w", err)
+    // }
 
     return nil
 }

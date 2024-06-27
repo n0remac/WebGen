@@ -15,6 +15,13 @@ type TerraformVars struct {
 }
 
 func GenerateTerraform(vars TerraformVars, appPath string) error {
+	// Create the Terraform directory
+	terraformPath := filepath.Join(appPath, "terraform")
+	err := os.Mkdir(terraformPath, 0755)
+	if err != nil {
+		return fmt.Errorf("creating terraform directory: %w", err)
+	}
+
 	if err := generateMainTF(vars, appPath); err != nil {
 		return fmt.Errorf("generating main.tf: %w", err)
 	}
