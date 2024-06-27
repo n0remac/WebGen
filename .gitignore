@@ -4,3 +4,5 @@ frontend/build/*
 */.DS_Store
 .DS_Store
 *.db
+
+terraform/*

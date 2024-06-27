@@ -1,0 +1,6 @@
+digitalocean_token = "{{.DigitalOceanToken}}"
+project_name       = "{{.ProjectName}}"
+droplet_name       = "{{.DropletName}}"
+region             = "{{.Region}}"
+size               = "{{.Size}}"
+image              = "{{.Image}}"

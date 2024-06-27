@@ -1,21 +1,22 @@
 package main
 
 import (
-	"log"
 	"generation/internal/generator"
+	"log"
 
 	"fmt"
-	"os/exec"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-var projectName string = "MyApp" 
+var projectName string = "MyApp"
 
 func main() {
-	generateApp()
-	setupGit()
+	// generateApp()
+	// setupGit()
+	setupDigitalOcean()
 }
 
 func generateApp() {
@@ -24,7 +25,7 @@ func generateApp() {
 	copyDirectory("../app", appPath)
 	replaceWordInDirectory(appPath, "CodeGen", projectName)
 	replaceWordInDirectory(appPath, "codegen", strings.ToLower(projectName))
-	
+
 	err := generator.GenerateAll("schema.yaml", appPath, projectName)
 	if err != nil {
 		log.Fatalf("Generation failed: %v", err)
@@ -34,6 +35,7 @@ func generateApp() {
 func setupGit() {
 	// Define variables here
 	githubOwner := "n0remac"
+	directory := "../git-terraform"
 
 	// Create the Terraform variables
 	vars := generator.TerraformVars{
@@ -41,17 +43,54 @@ func setupGit() {
 		RepoName:    projectName,
 	}
 
+	createDirectory(directory)
+
 	// Generate Terraform files
-	err := generator.GenerateTerraform(vars, "..")
+	err := generator.GenerateTerraform(vars, directory)
 	if err != nil {
 		log.Fatalf("Error generating Terraform files: %v", err)
 	}
 
 	// Run Terraform
-	runTerraform("../terraform")
+	runTerraform(directory)
 
 	// Run Git commands to push code
 	runGitCommands(githubOwner, projectName)
+}
+
+func setupDigitalOcean() {
+	directory := "../digitalocean-terraform"
+
+	// DigitalOcean credentials and variables
+	digitaloceanToken := os.Getenv("DIGITAL_OCEANS_API")
+	if digitaloceanToken == "" {
+		log.Fatal("DIGITAL_OCEANS_API environment variable not set")
+	}
+	dropletName := projectName + "-droplet"
+	region := "nyc3"
+	size := "s-1vcpu-1gb"
+	image := "ubuntu-20-04-x64"
+
+	// Create the DigitalOcean Terraform variables
+	vars := generator.DigitalOceanVars{
+		DigitalOceanToken: digitaloceanToken,
+		ProjectName:       projectName,
+		DropletName:       dropletName,
+		Region:            region,
+		Size:              size,
+		Image:             image,
+	}
+
+	createDirectory(directory)
+
+	// Generate DigitalOcean Terraform files
+	err := generator.GenerateDigitalOceanTerraform(vars, directory)
+	if err != nil {
+		log.Fatalf("Error generating DigitalOcean Terraform files: %v", err)
+	}
+
+	// Run Terraform for DigitalOcean
+	runTerraform(directory)
 }
 
 func runTerraform(appPath string) {
@@ -136,6 +175,15 @@ func copyDirectory(source, destination string) error {
 
 	// Print the output of the command
 	fmt.Printf("Output: %s\n", string(output))
+
+	return nil
+}
+
+func createDirectory(appPath string) error {
+	err := os.Mkdir(appPath, 0755)
+	if err != nil {
+		return fmt.Errorf("creating directory: %w", err)
+	}
 
 	return nil
 }
