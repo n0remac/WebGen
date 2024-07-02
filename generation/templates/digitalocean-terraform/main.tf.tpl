@@ -11,6 +11,11 @@ provider "digitalocean" {
   token = var.digitalocean_token
 }
 
+resource "digitalocean_ssh_key" "default" {
+  name       = "my-ssh-key"
+  public_key = file("id_rsa.pub")
+}
+
 resource "digitalocean_project" "project" {
   name        = var.project_name
   description = "Project created by Terraform"
@@ -23,6 +28,7 @@ resource "digitalocean_droplet" "web" {
   region = var.region
   size   = var.size
   image  = var.image
+  ssh_keys = [digitalocean_ssh_key.default.fingerprint]
 
   tags = ["web"]
 

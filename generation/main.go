@@ -2,22 +2,36 @@ package main
 
 import (
 	"bytes"
-	"generation/internal/generator"
-	"log"
-
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/crypto/ssh"
+
+	"generation/internal/generator"
 )
 
 var projectName string = "MyApp"
 
 func main() {
+	// Define variables here
+	githubOwner := "n0remac"
+	gitDirectory := "../git-terraform"
+	digitalOceansDirectory := "../digitalocean-terraform"
+
 	generateApp()
-	setupGit()
-	setupDigitalOcean()
+	setupGitTerraform(gitDirectory, githubOwner)
+	setupDigitalOceanTerraform(digitalOceansDirectory)
+	createKeys()
+	runDigitalOceanTerraform(digitalOceansDirectory)
+	runGitTerraform(gitDirectory, githubOwner)
 }
 
 func generateApp() {
@@ -33,10 +47,7 @@ func generateApp() {
 	}
 }
 
-func setupGit() {
-	// Define variables here
-	githubOwner := "n0remac"
-	directory := "../git-terraform"
+func setupGitTerraform(gitDirectory string, githubOwner string) {
 
 	// Create the Terraform variables
 	vars := generator.TerraformVars{
@@ -44,24 +55,24 @@ func setupGit() {
 		RepoName:    projectName,
 	}
 
-	createDirectory(directory)
+	createDirectory(gitDirectory)
 
 	// Generate Terraform files
-	err := generator.GenerateTerraform(vars, directory)
+	err := generator.GenerateTerraform(vars, gitDirectory)
 	if err != nil {
 		log.Fatalf("Error generating Terraform files: %v", err)
 	}
+}
 
+func runGitTerraform(gitDirectory string, githubOwner string) {
 	// Run Terraform
-	runTerraform(directory)
+	runTerraform(gitDirectory)
 
 	// Run Git commands to push code
 	runGitCommands(githubOwner, projectName)
 }
 
-func setupDigitalOcean() {
-	directory := "../digitalocean-terraform"
-
+func setupDigitalOceanTerraform(directory string) {
 	// DigitalOcean credentials and variables
 	digitaloceanToken := os.Getenv("DIGITAL_OCEANS_API")
 	if digitaloceanToken == "" {
@@ -89,7 +100,9 @@ func setupDigitalOcean() {
 	if err != nil {
 		log.Fatalf("Error generating DigitalOcean Terraform files: %v", err)
 	}
+}
 
+func runDigitalOceanTerraform(directory string) {
 	// Run Terraform for DigitalOcean
 	runTerraform(directory)
 
@@ -98,7 +111,11 @@ func setupDigitalOcean() {
 	if err != nil {
 		log.Fatalf("Error getting droplet IP: %v", err)
 	}
-	fmt.Printf("Droplet IP: %s\n", dropletIP)
+	//  save droplet IP to a file
+	err = os.WriteFile("../git-terraform/digitalocean_host", []byte(dropletIP), 0644)
+	if err != nil {
+		log.Fatalf("Error saving droplet IP: %v", err)
+	}
 }
 
 func runTerraform(appPath string) {
@@ -207,4 +224,53 @@ func createDirectory(appPath string) error {
 	}
 
 	return nil
+}
+
+func createKeys() {
+	privateKey, publicKey, err := generateSSHKeyPair(2048)
+	if err != nil {
+		fmt.Printf("Error generating SSH key pair: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = saveKeyToFile(privateKey, "../git-terraform/id_rsa")
+	if err != nil {
+		fmt.Printf("Error saving private key: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = saveKeyToFile(publicKey, "../digitalocean-terraform/id_rsa.pub")
+	if err != nil {
+		fmt.Printf("Error saving public key: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("SSH key pair generated and saved to id_rsa and id_rsa.pub")
+}
+
+func generateSSHKeyPair(bits int) (privateKey []byte, publicKey []byte, err error) {
+	// Generate a new RSA key pair
+	privateKeyObj, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Encode the private key to PEM format
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKeyObj),
+	})
+
+	// Create the public key
+	pub, err := ssh.NewPublicKey(&privateKeyObj.PublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	publicKeyBytes := ssh.MarshalAuthorizedKey(pub)
+
+	return privateKeyPEM, publicKeyBytes, nil
+}
+
+func saveKeyToFile(key []byte, filename string) error {
+	return os.WriteFile(filename, key, 0600)
 }
