@@ -24,19 +24,46 @@ resource "digitalocean_project" "project" {
 }
 
 resource "digitalocean_droplet" "web" {
-  name   = var.droplet_name
-  region = var.region
-  size   = var.size
-  image  = var.image
-  ssh_keys = [digitalocean_ssh_key.default.fingerprint]
+  name       = var.droplet_name
+  region     = var.region
+  size       = var.size
+  image      = var.image
+  ssh_keys   = [digitalocean_ssh_key.default.fingerprint]
 
   tags = ["web"]
 
   # Provisioning the droplet with a startup script
   user_data = <<-EOF
               #!/bin/bash
-              apt-get update
-              apt-get install -y nginx
+              set -e
+
+              # Create a non-root user
+              useradd -m -s /bin/bash app
+              mkdir -p /home/app/.ssh
+              cp /root/.ssh/authorized_keys /home/app/.ssh/
+              chown -R app:app /home/app/.ssh
+              chmod 700 /home/app/.ssh
+              chmod 600 /home/app/.ssh/authorized_keys
+
+              # Update and install necessary packages
+              apt update
+              apt install -y nginx
+
+              # Install Go
+              wget https://golang.org/dl/go1.18.1.linux-amd64.tar.gz
+              tar -C /usr/local -xzf go1.18.1.linux-amd64.tar.gz
+              echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+              echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/app/.profile
+              chown app:app /home/app/.profile
+
+              # Install Node.js
+              curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+              apt install -y nodejs
+
+              # Verify installations
+              su - app -c 'go version'
+              su - app -c 'node -v'
+              su - app -c 'npm -v'
               EOF
 }
 
