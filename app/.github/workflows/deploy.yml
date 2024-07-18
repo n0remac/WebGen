@@ -27,10 +27,4 @@ jobs:
       env:
         DIGITALOCEAN_HOST: ${{ secrets.DIGITALOCEAN_HOST }}
       run: |
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ app@${{ env.DIGITALOCEAN_HOST }}
-
-    - name: Restart service on DigitalOcean Droplet
-      env:
-        DIGITALOCEAN_HOST: ${{ secrets.DIGITALOCEAN_HOST }}
-      run: |
-        ssh -o StrictHostKeyChecking=no app@${{ env.DIGITALOCEAN_HOST }} 'systemctl restart nginx'
+        rsync -avz -vv -e "ssh -o StrictHostKeyChecking=no" ./ app@${{ env.DIGITALOCEAN_HOST }}:/home/app

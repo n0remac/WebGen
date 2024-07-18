@@ -50,8 +50,8 @@ resource "digitalocean_droplet" "web" {
               apt install -y nginx
 
               # Install Go
-              wget https://golang.org/dl/go1.18.1.linux-amd64.tar.gz
-              tar -C /usr/local -xzf go1.18.1.linux-amd64.tar.gz
+              wget https://golang.org/dl/go1.21.4.linux-amd64.tar.gz
+              tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz
               echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
               echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/app/.profile
               chown app:app /home/app/.profile
