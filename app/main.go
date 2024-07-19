@@ -9,8 +9,9 @@ import (
 	"CodeGen/pkg/user"
 	"context"
 	"fmt"
-	"log/slog"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/bufbuild/connect-go"
 	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
@@ -26,7 +27,7 @@ func NewLogInterceptor() connect.UnaryInterceptorFunc {
 		) (connect.AnyResponse, error) {
 			resp, err := next(ctx, req)
 			if err != nil {
-				// slog.Error("connect error", "error", fmt.Sprintf("%+v", err))
+				// log.Error("connect error", "error", fmt.Sprintf("%+v", err))
 				// TODO breadchris this should only be done for local dev
 				fmt.Printf("%+v\n", err)
 			}
@@ -38,7 +39,7 @@ func NewLogInterceptor() connect.UnaryInterceptorFunc {
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Debug("request", "method", r.Method, "path", r.URL.Path)
+		log.Printf("request: method=%s, path=%s\n", r.Method, r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -63,7 +64,7 @@ func main() {
 	)
 
 	recoverCall := func(_ context.Context, spec connect.Spec, _ http.Header, p any) error {
-		slog.Error("panic", "err", fmt.Sprintf("%+v", p))
+		log.Printf("panic: %+v\n", p)
 		if err, ok := p.(error); ok {
 			return err
 		}
@@ -74,12 +75,28 @@ func main() {
 	// most servers should mount both handlers.
 	apiRoot.Handle(grpcreflect.NewHandlerV1Alpha(reflector, connect.WithRecover(recoverCall)))
 
+	// Serve the frontend build
+	fs := http.FileServer(http.Dir("./frontend/build/site"))
+	apiRoot.Handle("/static/", fs)
+
+	// Handle fallback to index.html for SPA
+	apiRoot.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("handling fallback for path: %s\n", r.URL.Path)
+		if r.URL.Path != "/" {
+			_, err := os.Stat("./frontend/build/site" + r.URL.Path)
+			if os.IsNotExist(err) {
+				http.ServeFile(w, r, "./frontend/build/site/index.html")
+				return
+			}
+		}
+		fs.ServeHTTP(w, r)
+	})
+
 	addr := fmt.Sprintf(":%d", 8080)
 
-	slog.Info("starting http server", "addr", addr)
+	log.Printf("starting http server on %s\n", addr)
 
 	http.ListenAndServe(addr, h2c.NewHandler(corsMiddleware(apiRoot), &http2.Server{}))
-
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
