@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - name: Checkout code
@@ -18,7 +18,40 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Install dependencies
+    - name: Install Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+
+    - name: Install dependencies for frontend
+      run: |
+        cd frontend
+        npm install
+
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.21.4'
+
+    - name: Install dependencies for backend
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sqlite3 libsqlite3-dev
+
+    - name: Generate gRPC code
+      run: |
+        go generate .
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+
+    - name: Build backend
+      run: |
+        CGO_ENABLED=1 GOOS=linux go build -o MyApp .
+
+    - name: Install rsync and ssh
       run: |
         sudo apt update
         sudo apt install -y rsync ssh
@@ -27,4 +60,6 @@ jobs:
       env:
         DIGITALOCEAN_HOST: ${{ secrets.DIGITALOCEAN_HOST }}
       run: |
-        rsync -avz -vv -e "ssh -o StrictHostKeyChecking=no" ./ app@${{ env.DIGITALOCEAN_HOST }}:/home/app
+        ssh -o StrictHostKeyChecking=no app@${{ env.DIGITALOCEAN_HOST }} 'mkdir -p /home/app/frontend/dist'
+        rsync -avz -vv -e "ssh -o StrictHostKeyChecking=no" ./MyApp app@${{ env.DIGITALOCEAN_HOST }}:/home/app/MyApp
+        rsync -avz -vv -e "ssh -o StrictHostKeyChecking=no" ./frontend/dist/ app@${{ env.DIGITALOCEAN_HOST }}:/home/app/frontend/dist/

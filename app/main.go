@@ -3,10 +3,10 @@ package main
 //go:generate npx buf generate
 
 import (
-	"CodeGen/gen/proto/user/userconnect"
-	"CodeGen/pkg/database"
-	"CodeGen/pkg/service"
-	"CodeGen/pkg/user"
+	"MyApp/gen/proto/user/userconnect"
+	"MyApp/pkg/database"
+	"MyApp/pkg/service"
+	"MyApp/pkg/user"
 	"context"
 	"fmt"
 	"log"
@@ -76,16 +76,16 @@ func main() {
 	apiRoot.Handle(grpcreflect.NewHandlerV1Alpha(reflector, connect.WithRecover(recoverCall)))
 
 	// Serve the frontend build
-	fs := http.FileServer(http.Dir("./frontend/build/site"))
+	fs := http.FileServer(http.Dir("./frontend/dist/site"))
 	apiRoot.Handle("/static/", fs)
 
 	// Handle fallback to index.html for SPA
 	apiRoot.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("handling fallback for path: %s\n", r.URL.Path)
 		if r.URL.Path != "/" {
-			_, err := os.Stat("./frontend/build/site" + r.URL.Path)
+			_, err := os.Stat("./frontend/dist/site" + r.URL.Path)
 			if os.IsNotExist(err) {
-				http.ServeFile(w, r, "./frontend/build/site/index.html")
+				http.ServeFile(w, r, "./frontend/dist/site/index.html")
 				return
 			}
 		}

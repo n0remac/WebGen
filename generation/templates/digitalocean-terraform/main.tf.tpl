@@ -45,25 +45,13 @@ resource "digitalocean_droplet" "web" {
               chmod 700 /home/app/.ssh
               chmod 600 /home/app/.ssh/authorized_keys
 
-              # Update and install necessary packages
-              apt update
-              apt install -y nginx
+              # Update the system and install necessary libraries
+              apt-get update
+              apt-get upgrade -y
+              apt-get install -y build-essential libcap2-bin sqlite3 libsqlite3-dev
 
-              # Install Go
-              wget https://golang.org/dl/go1.21.4.linux-amd64.tar.gz
-              tar -C /usr/local -xzf go1.21.4.linux-amd64.tar.gz
-              echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
-              echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/app/.profile
-              chown app:app /home/app/.profile
-
-              # Install Node.js
-              curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-              apt install -y nodejs
-
-              # Verify installations
-              su - app -c 'go version'
-              su - app -c 'node -v'
-              su - app -c 'npm -v'
+              # Set binary capabilities (if needed, e.g., for using low-numbered ports)
+              # setcap 'cap_net_bind_service=+ep' /home/app/MyApp
               EOF
 }
 
